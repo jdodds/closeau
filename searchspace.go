@@ -6,9 +6,10 @@ import (
 )
 
 type SearchSpace struct {
-	charPairs map[[2]rune]IdSet
+	charPairs map[charPair]IdSet
 }
 
+type charPair [2]rune
 type Id uint64
 
 type IdSet map[Id]bool
@@ -50,7 +51,7 @@ func (ss SearchSpace) String() string {
 
 func (ss *SearchSpace) Add(id Id, item string) {
 	if ss.charPairs == nil {
-		ss.charPairs = make(map[[2]rune]IdSet)
+		ss.charPairs = make(map[charPair]IdSet)
 	}
 	var j interface{}
 	i := []byte(item)
@@ -72,7 +73,7 @@ func (ss *SearchSpace) add(id Id, m map[string]interface{}) {
 
 func (ss *SearchSpace) index(id Id, st string) {
 	for i, j := 0, 1; j < len(st); i, j = i+1, j+1 {
-		l := [2]rune{rune(st[i]), rune(st[j])}
+		l := charPair{rune(st[i]), rune(st[j])}
 		if ss.charPairs[l] == nil {
 			ss.charPairs[l] = make(IdSet)
 		}
@@ -82,7 +83,7 @@ func (ss *SearchSpace) index(id Id, st string) {
 
 func (ss *SearchSpace) Search(st string) []Id {
 	var r []Id
-	l := [2]rune{rune(st[0]), rune(st[1])}
+	l := charPair{rune(st[0]), rune(st[1])}
 	initial := ss.charPairs[l]
 	if initial == nil {
 		return r
@@ -90,7 +91,7 @@ func (ss *SearchSpace) Search(st string) []Id {
 
 	results := initial.Copy()
 	for i, j := 1, 2; j < len(st); i, j = i+1, j+1 {
-		o := ss.charPairs[[2]rune{rune(st[i]), rune(st[j])}]
+		o := ss.charPairs[charPair{rune(st[i]), rune(st[j])}]
 		results.Intersect(o)
 		if len(results) == 0 {
 			return r
