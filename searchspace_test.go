@@ -14,6 +14,6 @@ func TestIndex(t *testing.T) {
 	ss.Add(4, `{"a": "sailboat doorknob"}`)
 	r := ss.Search("bob")
 	if len(r) != 2 {
-		t.Errorf("len(%v) = %d, want %d)", ss, len(r), 2)
+		t.Errorf("len %v.Search('bob') = %d, want %d)", ss, len(r), 2)
 	}
 }

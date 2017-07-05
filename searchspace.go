@@ -6,97 +6,97 @@ import (
 )
 
 type SearchSpace struct {
-	uniqueChars map[rune]pairLookup
+	charPairs map[[2]rune]IdSet
 }
 
-type pairLookup map[rune]map[int]bool
+type Id uint64
+
+type IdSet map[Id]bool
+
+func (i *IdSet) Copy() IdSet {
+	r := make(IdSet)
+	for k, _ := range *i {
+		r[k] = true
+	}
+	return r
+}
+
+func (i *IdSet) Intersect(o IdSet) {
+	for k, _ := range *i {
+		if !o[k] {
+			delete(*i, k)
+		}
+	}
+}
 
 func (ss SearchSpace) String() string {
 	s := make([]byte, 0)
 	s = append(s, '{')
-	for k, v := range ss.uniqueChars {
+	for k, v := range ss.charPairs {
 		s = append(s, '"')
-		s = strconv.AppendQuoteRune(s, k)
-		s = append(s, '"', ':', '{', '"')
-		for kk, vv := range v {
-			s = strconv.AppendQuoteRune(s, kk)
-			s = append(s, '"', ':', '[')
-			for kkk, _ := range vv {
-				s = strconv.AppendInt(s, int64(kkk), 10)
-				s = append(s, ',', ' ')
-			}
-			s = append(s, ']', ',')
+		s = strconv.AppendQuoteRune(s, k[0])
+		s = append(s, ',')
+		s = strconv.AppendQuoteRune(s, k[1])
+		s = append(s, '"', ':', '[')
+		for kk, _ := range v {
+			s = strconv.AppendUint(s, uint64(kk), 10)
+			s = append(s, ',', ' ')
 		}
-		s = append(s, '}', ',')
+		s = append(s, ']', ',')
 	}
 	s = append(s, '}')
 	return string(s)
 }
 
-func (ss *SearchSpace) Add(index int, item string) {
-	if ss.uniqueChars == nil {
-		ss.uniqueChars = make(map[rune]pairLookup)
+func (ss *SearchSpace) Add(id Id, item string) {
+	if ss.charPairs == nil {
+		ss.charPairs = make(map[[2]rune]IdSet)
 	}
 	var j interface{}
 	i := []byte(item)
 	json.Unmarshal(i, &j)
 	m := j.(map[string]interface{})
-	ss.add(index, m)
+	ss.add(id, m)
 }
 
-func (ss *SearchSpace) add(i int, m map[string]interface{}) {
+func (ss *SearchSpace) add(id Id, m map[string]interface{}) {
 	for _, v := range m {
 		switch vv := v.(type) {
 		case string:
-			ss.index(i, vv)
+			ss.index(id, vv)
 		case map[string]interface{}:
-			ss.add(i, vv)
-		}
-
-	}
-}
-
-func (ss *SearchSpace) index(i int, st string) {
-	s := []rune(st)
-	for k := range s {
-		if ss.uniqueChars[s[k]] == nil {
-			ss.uniqueChars[s[k]] = make(pairLookup)
-		}
-		l := k + 1
-		if l < len(s) {
-			if ss.uniqueChars[s[k]][s[l]] == nil {
-				ss.uniqueChars[s[k]][s[l]] = make(map[int]bool)
-			}
-			ss.uniqueChars[s[k]][s[l]][i] = true
+			ss.add(id, vv)
 		}
 	}
 }
 
-func (ss *SearchSpace) Search(s string) []int {
-	r := make([]int, 0)
-	a := s[0]
-	if ss.uniqueChars[rune(a)] == nil {
+func (ss *SearchSpace) index(id Id, st string) {
+	for i, j := 0, 1; j < len(st); i, j = i+1, j+1 {
+		l := [2]rune{rune(st[i]), rune(st[j])}
+		if ss.charPairs[l] == nil {
+			ss.charPairs[l] = make(IdSet)
+		}
+		ss.charPairs[l][id] = true
+	}
+}
+
+func (ss *SearchSpace) Search(st string) []Id {
+	var r []Id
+	l := [2]rune{rune(st[0]), rune(st[1])}
+	initial := ss.charPairs[l]
+	if initial == nil {
 		return r
 	}
-	if ss.uniqueChars[rune(a)][rune(s[1])] == nil {
-		return r
-	}
-	results := make(map[int]bool)
-	for ook, _ := range ss.uniqueChars[rune(a)][rune(s[1])] {
-		results[ook] = true
-	}
-	for i := 2; i < len(s); i++ {
-		bros, ok := ss.uniqueChars[rune(a)][rune(s[i])]
-		if !ok {
-			continue
-		}
-		for k, _ := range results {
-			_, ok := bros[k]
-			if !ok {
-				delete(results, k)
-			}
+
+	results := initial.Copy()
+	for i, j := 1, 2; j < len(st); i, j = i+1, j+1 {
+		o := ss.charPairs[[2]rune{rune(st[i]), rune(st[j])}]
+		results.Intersect(o)
+		if len(results) == 0 {
+			return r
 		}
 	}
+
 	for k, _ := range results {
 		r = append(r, k)
 	}
