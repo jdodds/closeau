@@ -7,7 +7,7 @@ import (
 func TestIndex(t *testing.T) {
 	in := `{"a":"sometext"}`
 	in2 := `{"a": "hey baby yo"}`
-	var ss SearchSpace
+	ss := new(Index)
 	ss.Add(1, in)
 	ss.Add(2, in2)
 	ss.Add(3, `{"a": "bob"}`)

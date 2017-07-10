@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-type SearchSpace struct {
+type Index struct {
 	charPairs map[charPair]IdSet
 }
 
@@ -30,7 +30,7 @@ func (i *IdSet) Intersect(o IdSet) {
 	}
 }
 
-func (ss SearchSpace) String() string {
+func (ss Index) String() string {
 	s := make([]byte, 0)
 	s = append(s, '{')
 	for k, v := range ss.charPairs {
@@ -49,7 +49,7 @@ func (ss SearchSpace) String() string {
 	return string(s)
 }
 
-func (ss *SearchSpace) Add(id Id, item string) {
+func (ss *Index) Add(id Id, item string) {
 	if ss.charPairs == nil {
 		ss.charPairs = make(map[charPair]IdSet)
 	}
@@ -60,7 +60,7 @@ func (ss *SearchSpace) Add(id Id, item string) {
 	ss.add(id, m)
 }
 
-func (ss *SearchSpace) add(id Id, m map[string]interface{}) {
+func (ss *Index) add(id Id, m map[string]interface{}) {
 	for _, v := range m {
 		switch vv := v.(type) {
 		case string:
@@ -71,7 +71,7 @@ func (ss *SearchSpace) add(id Id, m map[string]interface{}) {
 	}
 }
 
-func (ss *SearchSpace) index(id Id, st string) {
+func (ss *Index) index(id Id, st string) {
 	for i, j := 0, 1; j < len(st); i, j = i+1, j+1 {
 		l := charPair{rune(st[i]), rune(st[j])}
 		if ss.charPairs[l] == nil {
@@ -81,7 +81,7 @@ func (ss *SearchSpace) index(id Id, st string) {
 	}
 }
 
-func (ss *SearchSpace) Search(st string) []Id {
+func (ss *Index) Search(st string) []Id {
 	var r []Id
 	l := charPair{rune(st[0]), rune(st[1])}
 	initial := ss.charPairs[l]
