@@ -1,13 +1,15 @@
 package closeau
 
 import (
+	"os"
+	"path"
 	"testing"
 )
 
 func TestIndex(t *testing.T) {
 	in := `{"a":"sometext"}`
 	in2 := `{"a": "hey baby yo"}`
-	ss := new(Index)
+	ss := NewIndex(NewDirStore(path.Join(os.TempDir(), "closeau")))
 	ss.Add(1, in)
 	ss.Add(2, in2)
 	ss.Add(3, `{"a": "bob"}`)
